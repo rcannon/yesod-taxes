@@ -32,6 +32,7 @@ executable yesod-taxes
     build-depends:    
         base >=4.9.1.0 && <5
       , yesod ==1.6.*
+      , text-1.2.4.1
 
   hs-source-dirs:   app
     default-language: Haskell2010

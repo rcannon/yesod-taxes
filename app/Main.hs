@@ -45,14 +45,14 @@ calculateTaxResult taxInfo =
   afterTaxIncome = income - taxPayed
   effectiveTaxRate = taxPayed / income
   
-  calcTaxPayed income |
-    income > 523600. = (+ 157804.25) $ .37 * (income - 523600.)
-    income > 209425. = (+ 47843.)    $ .35 * (income - 209425.)
-    income > 164925. = (+ 33603.)    $ .32 * (income - 164925.)
-    income > 86375.  = (+ 14751.)    $ .24 * (income - 86375.)
-    income > 40525.  = (+ 4664.)     $ .22 * (income - 40525.)
-    income > 9950.   = (+ 995.)      $ .12 * (income - 9950.)
-    otherwise        =                 .10 * income
+  calcTaxPayed income 
+    | income > 523600 = (+ 157804.25) $ 0.37 * (income - 523600)
+    | income > 209425 = (+ 47843)     $ 0.35 * (income - 209425)
+    | income > 164925 = (+ 33603)     $ 0.32 * (income - 164925)
+    | income > 86375  = (+ 14751)     $ 0.24 * (income - 86375)
+    | income > 40525  = (+ 4664)      $ 0.22 * (income - 40525)
+    | income > 9950   = (+ 995)       $ 0.12 * (income - 9950)
+    | otherwise       =                 0.10 * income
     
 
 
