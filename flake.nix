@@ -15,7 +15,7 @@
 
         haskellPackages = pkgs.haskell.packages.ghc8107;
 
-        packageName = "hyfin";
+        packageName = "yesod-taxes";
       in 
       {
         packages.${packageName} =
