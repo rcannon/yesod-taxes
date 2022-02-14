@@ -23,3 +23,10 @@ cabal.project.local~
 .ghc.environment.*
 .DS_Store
 .*.sw?
+result
+result/*
+flake.lock
+client_session_keys.aes
+CHANGELOG.md
+dist-newstyle
+dist-newstyle/*

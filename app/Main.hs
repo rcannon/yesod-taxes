@@ -8,19 +8,9 @@ import Control.Applicative
 import Data.Text
 import Yesod
 
-data App = App
-
-mkYesod "App" [parseRoutes|
-/ HomeR GET
-/tax TaxInfoR GET
-/tax/result TaxResultR POST
-|]
-
-instance Yesod App
-
--- this is necessary for using areq
-instance RenderMessage App FormMessage where
-    renderMessage _ _ = defaultFormMessag
+--
+-- Tax Data and Calculator
+--
 
 data TaxInfo = TaxInfo 
   { incomeInfo :: Double }
@@ -36,9 +26,8 @@ data TaxResult = TaxResult
 
 calculateTaxResult :: TaxInfo -> TaxResult
 calculateTaxResult taxInfo = 
-  TaxResult <$> effectiveTaxRate 
-            <*> afterTaxIncome 
-            <*> taxPayed
+  TaxResult effectiveTaxRate afterTaxIncome taxPayed
+
   where
   income = incomeInfo taxInfo
   taxPayed = calcTaxPayed income
@@ -53,19 +42,43 @@ calculateTaxResult taxInfo =
     | income > 40525  = (+ 4664)      $ 0.22 * (income - 40525)
     | income > 9950   = (+ 995)       $ 0.12 * (income - 9950)
     | otherwise       =                 0.10 * income
-    
+    -- source : https://www.irs.gov/pub/irs-drop/rp-20-45.pdf (Table 3, p. 6)
+
+
+--
+-- Yesod Web interface
+--
+
+data App = App
+
+
+mkYesod "App" [parseRoutes|
+/ HomeR GET
+/tax TaxInfoR GET
+/tax/result TaxResultR POST
+|]
+
+
+instance Yesod App
+
+
+-- this is necessary for using areq
+instance RenderMessage App FormMessage where
+    renderMessage _ _ = defaultFormMessage
 
 
 taxInfoAForm :: AForm Handler TaxResult
-taxInfoAForm = (calculateTaxResult . TaxInfo) <$> areq incomeField "Income" (Just 0)
+taxInfoAForm = (calculateTaxResult . TaxInfo) <$> areq incomeField "Taxible Income" (Just 0)
   where
   errorMessage :: Text
   errorMessage = "Income must be non-negative."
 
   incomeField = checkBool (>= 0) errorMessage doubleField
 
+
 taxInfoForm :: Html -> MForm Handler (FormResult TaxResult, Widget)
 taxInfoForm = renderTable $ taxInfoAForm
+
 
 getHomeR :: Handler Html
 getHomeR = defaultLayout [whamlet|<a href=@{TaxInfoR}>Tax Calculator!|]
@@ -86,6 +99,7 @@ getTaxInfoR = do
               <button>Submit
       |]
 
+
 postTaxResultR :: Handler Html
 postTaxResultR = do
   ((result, widget), enctype) <- runFormPost taxInfoForm
@@ -102,5 +116,6 @@ postTaxResultR = do
                   ^{widget}
                   <button>Submit
           |]
+
 
 main = warp 3000 App
