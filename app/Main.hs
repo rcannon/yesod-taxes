@@ -72,10 +72,9 @@ instance RenderMessage App FormMessage where
 
 
 taxInfoAForm :: AForm Handler TaxResult
-taxInfoAForm = (calculateTaxResult . TaxInfo) <$> areq incomeField "Taxible Income" (Just 0)
+taxInfoAForm = (calculateTaxResult . TaxInfo) <$> areq incomeField "Taxable Income " (Just 0)
   where
-  errorMessage :: Text
-  errorMessage = "Income must be non-negative."
+  errorMessage = "Income must be non-negative." :: Text
 
   incomeField = checkBool (>= 0) errorMessage doubleField
 
@@ -91,17 +90,26 @@ getHomeR = defaultLayout [whamlet|<a href=@{TaxInfoR}>Tax Calculator!|]
 getTaxInfoR :: Handler Html
 getTaxInfoR = do
   -- Generate the form to be displayed
-  (widget, enctype) <- generateFormPost taxInfoForm
-  defaultLayout
-      [whamlet|
-          <p>
-              The widget generated contains only the contents
-              of the form, not the form tag itself. So...
+  (widget, enctype) <- generateFormPost taxInfoForm 
+  defaultLayout $ do
+      setTitle title
+      app widget enctype
+      
+  where 
+  title = "US Federal Income Tax Calculator"
+
+  app widget enctype = do
+    toWidget [lucius| appStyle { text-align: center } |]
+
+    [whamlet|
+        <appStyle>
+          <p>#{title}
           <form method=post action=@{TaxResultR} enctype=#{enctype}>
               ^{widget}
-              <p>It also doesn't include the submit button.
+              <p>Click the button below to learn about your taxes!
               <button>Submit
-      |]
+    |]
+
 
 
 postTaxResultR :: Handler Html
@@ -111,7 +119,7 @@ postTaxResultR = do
       FormSuccess taxInfo -> defaultLayout [whamlet|
                                              <p>#{show taxInfo}
                                              <a href=@{TaxInfoR}>Again!
-                                             <a href=@{HomeR}>Go Home! 
+                                             <a href=@{HomeR}>Go Home 
                                            |]
       _ -> defaultLayout
           [whamlet|
