@@ -26,6 +26,7 @@ cabal.project.local~
 result
 result/*
 flake.lock
+./flake.lock
 client_session_key.aes
 CHANGELOG.md
 dist-newstyle
