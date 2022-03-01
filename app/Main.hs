@@ -82,8 +82,9 @@ mkYesod "TaxApp" [parseRoutes|
 / HomeR GET
 /tax TaxInfoR GET
 /tax/result TaxResultR POST
-/tax/id/#TaxResultId SavedResultR GET
+/tax/id SavedResultR GET
 |]
+-- /tax/id/#TaxResultId SavedResultR GET
 
 instance Yesod TaxApp
 
@@ -115,9 +116,10 @@ taxInfoForm
   errorMessage = "Income must be non-negative." :: Text
   
 -- access saved tax info from database
-savedInfoForm :: Html -> MForm Handler (FormResult TaxResult, Widget)
 savedInfoForm 
-  = renderTable $ runDB get404 . toSqlKey <$> areq intField "ID Numner: " Nothing
+  = renderTable
+  $ runDB . get . TaxResultKey
+  <$> areq intField "ID Numner: " Nothing
 
 --
 -- Yesod Web App Interface
@@ -154,7 +156,7 @@ getTaxInfoR = do
               <p>Click the button below to learn about your taxes!
               <button>Submit
           <p>"Or, Get Your Saved Tax Data: "
-          <form method=get action=@{SavedResultR}  enctype=#{enctype2}>
+          <form method=get action=@{SavedResultR} enctype=#{enctype2}>
               ^{widget2}
               <button>Submit
           <a href=@{HomeR}>Go Home
@@ -188,16 +190,27 @@ postTaxResultR = do
 
 
 -- access saved TaxResult based on database ID
-getSavedResultR :: TaxResultId -> Handler Html
-getSavedResultR taxResId = do
-  taxRes <- runDB $ get404 taxResId
-  defaultLayout [whamlet|
-                    <p>"Your Saved Tax Data"
-                    <p>#{show taxRes}
-                    <p>"Your ID number"
-                    <p>#{show taxResId}
-                    <a href=@{HomeR}>Go Home
-                |]
+-- getSavedResultR :: TaxResultId -> Handler Html
+getSavedResultR :: Handler Html
+getSavedResultR = do
+  ((result, widget), enctype) <- runFormGet savedInfoForm
+  case result of
+      FormSuccess taxResult -> do
+        defaultLayout 
+          [whamlet|
+            <p>"Your Saved Tax Data: "
+            <p>#{show taxResult}
+            <a href=@{HomeR}>Go Home
+          |]
+      _ -> defaultLayout
+          [whamlet|
+              <p>Invalid input, let's try again.
+              <form method=get action=@{SavedResultR} enctype=#{enctype}>
+                  ^{widget}
+                  <button>Submit
+              <a href=@{HomeR}>Go Home
+          |]
+
 
 
 --
