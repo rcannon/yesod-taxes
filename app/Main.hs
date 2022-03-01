@@ -82,7 +82,7 @@ mkYesod "TaxApp" [parseRoutes|
 / HomeR GET
 /tax TaxInfoR GET
 /tax/result TaxResultR POST
-/tax/id/#TaxResultId SavedTaxResultR GET
+/tax/id/#TaxResultId SavedResultR GET
 |]
 
 instance Yesod TaxApp
@@ -99,51 +99,63 @@ instance YesodPersist TaxApp where
         TaxApp pool <- getYesod
         runSqlPool action pool
 
+--
+-- Forms
+--
+
+-- accept tax info from user and return result
+taxInfoForm :: Html -> MForm Handler (FormResult TaxResult, Widget)
+taxInfoForm 
+  = renderTable 
+  $ (calculateTaxResult . TaxInfo) 
+  <$> areq incomeField "Taxable Income " (Just 0)
+
+  where
+  incomeField = checkBool (>= 0) errorMessage doubleField
+  errorMessage = "Income must be non-negative." :: Text
+  
+-- access saved tax info from database
+savedInfoForm :: Html -> MForm Handler (FormResult TaxResult, Widget)
+savedInfoForm 
+  = renderTable $ runDB get404 . toSqlKey <$> areq intField "ID Numner: " Nothing
 
 --
 -- Yesod Web App Interface
 --
 
--- applicative form instance for accepting
--- tax info and returning result
-taxInfoAForm :: AForm Handler TaxResult
-taxInfoAForm = (calculateTaxResult . TaxInfo) <$> areq incomeField "Taxable Income " (Just 0)
-  where
-  errorMessage = "Income must be non-negative." :: Text
-  incomeField = checkBool (>= 0) errorMessage doubleField
-
--- covert applicative form to mondatic
--- for better composability syntax
-taxInfoForm :: Html -> MForm Handler (FormResult TaxResult, Widget)
-taxInfoForm = renderTable $ taxInfoAForm
-
 -- home page
 getHomeR :: Handler Html
-getHomeR = defaultLayout [whamlet|
-                           <a href=@{TaxInfoR}>Tax Calculator!
-                         |]
+getHomeR = defaultLayout 
+  [whamlet|
+    <a href=@{TaxInfoR}>Tax Calculator!             
+  |]
 
 -- start page for tax app;
 -- asks user for TaxInfo
 getTaxInfoR :: Handler Html
 getTaxInfoR = do
-  (widget, enctype) <- generateFormPost taxInfoForm 
+  (calcWidget, calcEnctype) <- generateFormPost taxInfoForm 
+  (saveWidget, saveEnctype) <- generateFormGet savedInfoForm
   defaultLayout $ do
       setTitle title
-      app widget enctype
+      app calcWidget calcEnctype saveWidget saveEnctype
       
   where 
   title = "US Federal Income Tax Calculator"
 
-  app widget enctype = do
+  app widget1 enctype1 widget2 enctype2 = do
     toWidget [lucius| appStyle { text-align: center } |]
 
     [whamlet|
         <appStyle>
           <p>#{title}
-          <form method=post action=@{TaxResultR} enctype=#{enctype}>
-              ^{widget}
+          <form method=post action=@{TaxResultR} enctype=#{enctype1}>
+              ^{widget1}
               <p>Click the button below to learn about your taxes!
+              <button>Submit
+          <p>"Or, Get Your Saved Tax Data: "
+          <form method=get action=@{SavedResultR}  enctype=#{enctype2}>
+              ^{widget2}
               <button>Submit
           <a href=@{HomeR}>Go Home
     |]
@@ -176,8 +188,8 @@ postTaxResultR = do
 
 
 -- access saved TaxResult based on database ID
-getSavedTaxResultR :: TaxResultId -> Handler Html
-getSavedTaxResultR taxResId = do
+getSavedResultR :: TaxResultId -> Handler Html
+getSavedResultR taxResId = do
   taxRes <- runDB $ get404 taxResId
   defaultLayout [whamlet|
                     <p>"Your Saved Tax Data"
