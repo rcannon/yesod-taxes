@@ -8,6 +8,11 @@
 {-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE ViewPatterns               #-}
+{-# LANGUAGE DerivingStrategies         #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleInstances          #-}
 
 import Control.Applicative
 import Data.Text
@@ -77,15 +82,14 @@ mkYesod "TaxApp" [parseRoutes|
 / HomeR GET
 /tax TaxInfoR GET
 /tax/result TaxResultR POST
-/tax/result/save SaveR POST
-/tax/#TaxResultId SavedTaxResultR GET
+/tax/id/#TaxResultId SavedTaxResultR GET
 |]
 
 instance Yesod TaxApp
 
 -- this is necessary for using areq
 -- (applicative forms)
-instance RenderMessage App FormMessage where
+instance RenderMessage TaxApp FormMessage where
     renderMessage _ _ = defaultFormMessage
 
 instance YesodPersist TaxApp where
@@ -117,14 +121,12 @@ taxInfoForm = renderTable $ taxInfoAForm
 getHomeR :: Handler Html
 getHomeR = defaultLayout [whamlet|
                            <a href=@{TaxInfoR}>Tax Calculator!
-                           <a href=@
                          |]
 
 -- start page for tax app;
 -- asks user for TaxInfo
 getTaxInfoR :: Handler Html
 getTaxInfoR = do
-  -- Generate the form to be displayed
   (widget, enctype) <- generateFormPost taxInfoForm 
   defaultLayout $ do
       setTitle title
@@ -153,12 +155,15 @@ postTaxResultR :: Handler Html
 postTaxResultR = do
   ((result, widget), enctype) <- runFormPost taxInfoForm
   case result of
-      FormSuccess taxResult -> 
+      FormSuccess taxResult -> do
+        taxResId <- runDB $ insert taxResult
         defaultLayout [whamlet|
+                        <p>"Your tax information:"
                         <p>#{show taxResult}
+                        <p>"Your ID number for later access:"
+                        <p>#{show $ fromSqlKey taxResId}
                         <a href=@{TaxInfoR}>Again! 
                         <a href=@{HomeR}>Go Home 
-                        <a href=@{SaveR taxResult}>Save for Later! 
                       |]
       _ -> defaultLayout
           [whamlet|
@@ -169,23 +174,18 @@ postTaxResultR = do
               <a href=@{HomeR}>Go Home
           |]
 
--- adds tax result to database at user's request
-postSaveR :: TaxResult -> Handler HTML
-postSaveR taxResult = do
-  taxResId = insert taxResult
-  getSavedTaxResultR taxResId
 
 -- access saved TaxResult based on database ID
-getSavedTaxResultR :: TaxResultId -> Handler HTML
+getSavedTaxResultR :: TaxResultId -> Handler Html
 getSavedTaxResultR taxResId = do
   taxRes <- runDB $ get404 taxResId
-  [whamlet|
-    <p>"Your Saved Tax Data"
-    <p>#{show taxRes}
-    <p>"Your ID number"
-    <p>#{taxResId}
-    <a href=@{HomeR}>Go Home
-  |]
+  defaultLayout [whamlet|
+                    <p>"Your Saved Tax Data"
+                    <p>#{show taxRes}
+                    <p>"Your ID number"
+                    <p>#{show taxResId}
+                    <a href=@{HomeR}>Go Home
+                |]
 
 
 --
@@ -201,6 +201,5 @@ main = runStderrLoggingT
      $ \pool -> liftIO $ do
           runResourceT $ flip runSqlPool pool $ do
             runMigration migrateAll
-            testId = insert $ calculateTaxResult $ TaxInfo 1.0
-            putStrLn "Database test ID:" ++ show testId 
+            insert $ calculateTaxResult $ TaxInfo 1.0
           warp 3000 $ TaxApp pool

@@ -33,6 +33,10 @@ executable yesod-taxes
         base  >=4.9.1.0 && <5
       , yesod ==1.6.*
       , text  ==1.2.4.1
+      , monad-logger >= 0.3.36
+      , resourcet >= 1.2.4.3
+      , persistent >= 2.13.3.0
+      , persistent-postgresql >= 2.13.4
 
   hs-source-dirs:   app
     default-language: Haskell2010
