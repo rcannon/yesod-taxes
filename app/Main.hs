@@ -89,7 +89,7 @@ mkYesod "TaxApp" [parseRoutes|
 / HomeR GET
 /tax TaxInfoR GET
 /tax/result TaxResultR POST
-/tax/id SavedResultR GET
+/tax/id SavedResultR POST
 |]
 -- /tax/id/#TaxResultId SavedResultR GET
 
@@ -146,7 +146,7 @@ getHomeR = defaultLayout
 getTaxInfoR :: Handler Html
 getTaxInfoR = do
   (calcWidget, calcEnctype) <- generateFormPost taxInfoForm 
-  (saveWidget, saveEnctype) <- generateFormGet savedInfoForm
+  (saveWidget, saveEnctype) <- generateFormPost savedInfoForm
   defaultLayout $ do
       setTitle title
       app calcWidget calcEnctype saveWidget saveEnctype
@@ -165,7 +165,7 @@ getTaxInfoR = do
               <p>Click the button below to learn about your taxes!
               <button>Submit
           <p>"Or, Get Your Saved Tax Data: "
-          <form method=get action=@{SavedResultR} enctype=#{enctype2}>
+          <form method=post action=@{SavedResultR} enctype=#{enctype2}>
               ^{widget2}
               <button>Submit
           <a href=@{HomeR}>Go Home
@@ -199,9 +199,9 @@ postTaxResultR = do
 
 
 -- access saved TaxResult based on database ID
-getSavedResultR :: Handler Html
-getSavedResultR = do
-  ((result, widget), enctype) <- runFormGet savedInfoForm
+postSavedResultR :: Handler Html
+postSavedResultR = do
+  ((result, widget), enctype) <- runFormPost savedInfoForm
   case result of
       FormSuccess taxResId -> do
         let key = (toSqlKey $ getKey taxResId) :: Key TaxResult
