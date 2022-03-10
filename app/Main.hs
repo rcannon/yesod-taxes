@@ -74,7 +74,7 @@ calculateTaxResult taxInfo =
     | income > 40525  = (+ 4664)      $ 0.22 * (income - 40525)
     | income > 9950   = (+ 995)       $ 0.12 * (income - 9950)
     | otherwise       =                 0.10 * income
-    -- source : 
+    -- source: 
     -- https://www.irs.gov/pub/irs-drop/rp-20-45.pdf 
     -- (Table 3, p. 6-7)
 

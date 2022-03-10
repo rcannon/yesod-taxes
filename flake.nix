@@ -24,6 +24,7 @@
             haskell-language-server
             ghcid
             cabal-install
+            pkgs.postgresql
           ];
           inputsFrom = builtins.attrValues self.packages.${system};
         };
