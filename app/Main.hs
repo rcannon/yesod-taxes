@@ -35,6 +35,11 @@ data TaxInfo = TaxInfo
   { incomeInfo :: Double }
   deriving Show
 
+-- key for user to access saved tax data
+data TaxKey = TaxKey 
+  { getKey :: Int64 }
+  deriving Show
+
 -- result to user, which will be 
 -- stored in database for later access
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -119,9 +124,9 @@ taxInfoForm
   
 
 -- get DB key from user to return saved tax info
-savedInfoForm :: Html -> MForm Handler (FormResult Int64, Widget)
+savedInfoForm :: Html -> MForm Handler (FormResult TaxKey, Widget)
 savedInfoForm 
-  = renderTable $ areq intField "ID Number: " Nothing
+  = renderTable $ TaxKey <$> areq intField "ID Number: " Nothing
 
 
 --
@@ -199,7 +204,7 @@ getSavedResultR = do
   ((result, widget), enctype) <- runFormGet savedInfoForm
   case result of
       FormSuccess taxResId -> do
-        let key = (toSqlKey taxResId) :: Key TaxResult
+        let key = (toSqlKey $ getKey taxResId) :: Key TaxResult
         taxRes <- runDB $ get404 key 
         defaultLayout [whamlet|
                         <p>"Your tax information:"
