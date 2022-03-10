@@ -16,9 +16,11 @@
 
 import Control.Applicative
 import Data.Text
+import Data.Int
 import Yesod
 import Database.Persist
 import Database.Persist.Postgresql
+import Database.Persist.Sql
 import Database.Persist.TH
 import Control.Monad.Trans.Resource (runResourceT)
 import Control.Monad.Logger (runStderrLoggingT)
@@ -115,11 +117,12 @@ taxInfoForm
   incomeField = checkBool (>= 0) errorMessage doubleField
   errorMessage = "Income must be non-negative." :: Text
   
--- access saved tax info from database
+
+-- get DB key from user to return saved tax info
+savedInfoForm :: Html -> MForm Handler (FormResult Int64, Widget)
 savedInfoForm 
-  = renderTable
-  $ runDB . get . TaxResultKey
-  <$> areq intField "ID Numner: " Nothing
+  = renderTable $ areq intField "ID Number: " Nothing
+
 
 --
 -- Yesod Web App Interface
@@ -131,6 +134,7 @@ getHomeR = defaultLayout
   [whamlet|
     <a href=@{TaxInfoR}>Tax Calculator!             
   |]
+
 
 -- start page for tax app;
 -- asks user for TaxInfo
@@ -190,27 +194,23 @@ postTaxResultR = do
 
 
 -- access saved TaxResult based on database ID
--- getSavedResultR :: TaxResultId -> Handler Html
 getSavedResultR :: Handler Html
 getSavedResultR = do
   ((result, widget), enctype) <- runFormGet savedInfoForm
   case result of
-      FormSuccess taxResult -> do
-        defaultLayout 
-          [whamlet|
-            <p>"Your Saved Tax Data: "
-            <p>#{show taxResult}
-            <a href=@{HomeR}>Go Home
-          |]
+      FormSuccess taxResId -> do
+        let key = (toSqlKey taxResId) :: Key TaxResult
+        taxRes <- runDB $ get404 key 
+        defaultLayout [whamlet|
+                        <p>"Your tax information:"
+                        <p>#{show taxRes}
+                        <a href=@{HomeR}>Go Home 
+                      |]
       _ -> defaultLayout
           [whamlet|
-              <p>Invalid input, let's try again.
-              <form method=get action=@{SavedResultR} enctype=#{enctype}>
-                  ^{widget}
-                  <button>Submit
-              <a href=@{HomeR}>Go Home
+              <p>Invalid ID Number.
+              <a href=@{HomeR}>Try Again!
           |]
-
 
 
 --
