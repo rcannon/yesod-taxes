@@ -27,9 +27,6 @@
             pkgs.postgresql
           ];
           inputsFrom = builtins.attrValues self.packages.${system};
-          shellHook = ''
-            echo hi
-            '';
         };
       });
 }
