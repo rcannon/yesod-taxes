@@ -31,3 +31,5 @@ client_session_key.aes
 CHANGELOG.md
 dist-newstyle
 dist-newstyle/*
+taxapp_db
+taxapp_db/*

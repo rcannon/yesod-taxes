@@ -164,7 +164,7 @@ getTaxInfoR = do
               ^{widget1}
               <p>Click the button below to learn about your taxes!
               <button>Submit
-          <p>"Or, Get Your Saved Tax Data: "
+          <p>Or, get your saved tax data: 
           <form method=post action=@{SavedResultR} enctype=#{enctype2}>
               ^{widget2}
               <button>Submit
@@ -172,20 +172,24 @@ getTaxInfoR = do
     |]
 
 
--- returns TaxResult to user,
--- based on TaxInfo input
+-- returns TaxResult to user
+-- based on TaxInfo input, and
+-- stores info in DB for later access
 postTaxResultR :: Handler Html
 postTaxResultR = do
   ((result, widget), enctype) <- runFormPost taxInfoForm
   case result of
-      FormSuccess taxResult -> do
-        taxResId <- runDB $ insert taxResult
+      FormSuccess (tr@(TaxResult tp ati etr)) -> do
+        taxResId <- runDB $ insert tr
         defaultLayout [whamlet|
-                        <p>"Your tax information:"
-                        <p>#{show taxResult}
-                        <p>"Your ID number for later access:"
-                        <p>#{show $ fromSqlKey taxResId}
-                        <a href=@{TaxInfoR}>Again! 
+                        <p>Your Tax Information: 
+                        <p>Tax Payed: $#{show tp}
+                        <p>After Tax Income: $#{show ati}
+                        <p>Effective Tax Rate: #{show etr}
+                        <p>
+                        <p>Your ID number for later access: #{show $ fromSqlKey taxResId}
+                        <a href=@{TaxInfoR}>Again!
+                        <p> 
                         <a href=@{HomeR}>Go Home 
                       |]
       _ -> defaultLayout
@@ -198,17 +202,20 @@ postTaxResultR = do
           |]
 
 
--- access saved TaxResult based on database ID
+-- access saved TaxResult based on database entry key
 postSavedResultR :: Handler Html
 postSavedResultR = do
   ((result, widget), enctype) <- runFormPost savedInfoForm
   case result of
       FormSuccess taxResId -> do
         let key = (toSqlKey $ getKey taxResId) :: Key TaxResult
-        taxRes <- runDB $ get404 key 
+        (TaxResult tp ati etr) <- runDB $ get404 key 
         defaultLayout [whamlet|
-                        <p>"Your tax information:"
-                        <p>#{show taxRes}
+                        <p>Your Tax Information: 
+                        <p>Tax Payed: $#{show tp}
+                        <p>After Tax Income: $#{show ati}
+                        <p>Effective Tax Rate: #{show etr}
+                        <p> 
                         <a href=@{HomeR}>Go Home 
                       |]
       _ -> defaultLayout
