@@ -18,7 +18,7 @@ $ nix build
 ```
 $ ./db_start.sh
 ```
-- Note: to stop the database and remove the stored databse files, run `./db_stop.sh`.
+- Note: to stop the database and remove the stored database files, run `./db_stop.sh`.
 
 4. Run the application:
 ```
