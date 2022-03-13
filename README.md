@@ -8,6 +8,7 @@ Yesod Web App Federal Income Tax Calculator
 $ git clone https://github.com/rcannon/yesod-taxes.git
 $ cd yesod-taxes
 ```
+
 2. Confirm that Nix Flakes are enabled. 
 Build the project:
 ```
@@ -24,6 +25,7 @@ $ ./db_start.sh
 ```
 $ nix run
 ```
+
 5. Open your web browser and navigate to `localhost:3000/`.
 
 6. Follow the instructions on the site!
