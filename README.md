@@ -24,7 +24,6 @@ $ ./db_start.sh
 ```
 $ nix run
 ```
-
 5. Open your web browser and navigate to `localhost:3000/`.
 
 6. Follow the instructions on the site!
