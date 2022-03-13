@@ -10,9 +10,9 @@ $ cd yesod-taxes
 ```
 
 2. Confirm that Nix Flakes are enabled. 
-Build the project:
+Enter the development environment (necessary for loading Postgres through nix):
 ```
-$ nix build
+$ nix develop
 ```
 
 3. Activate the Postgres Database:
