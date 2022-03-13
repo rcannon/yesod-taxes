@@ -13,11 +13,18 @@ Build the project:
 ```
 $ nix build
 ```
-And run it:
+
+3. Activate the Postgres Database:
+```
+$ ./db_start.sh
+```
+- Note: to stop the database and remove the stored databse files, run `./db_stop.sh`.
+
+4. Run the application:
 ```
 $ nix run
 ```
 
-3. Open your web browser and navigate to `localhost:3000/`.
+5. Open your web browser and navigate to `localhost:3000/`.
 
-4. Follow the instructions on the site!
+6. Follow the instructions on the site!
