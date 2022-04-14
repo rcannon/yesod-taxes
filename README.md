@@ -69,4 +69,31 @@ TaxResult
 |]
 ```
 
+Now on to the computation. There isn't any advanced stuff going on, so I won't spend time explaining this.
 
+```Haskell
+-- lines 58-79 of Main.hs
+
+calculateTaxResult :: TaxInfo -> TaxResult
+calculateTaxResult taxInfo = 
+  TaxResult taxPayed afterTaxIncome effectiveTaxRate   
+
+  where
+  income = incomeInfo taxInfo
+
+  taxPayed = calcTaxPayed income
+  afterTaxIncome = income - taxPayed
+  effectiveTaxRate = taxPayed / income
+  
+  calcTaxPayed income 
+    | income > 523600 = (+ 157804.25) $ 0.37 * (income - 523600)
+    | income > 209425 = (+ 47843)     $ 0.35 * (income - 209425)
+    | income > 164925 = (+ 33603)     $ 0.32 * (income - 164925)
+    | income > 86375  = (+ 14751)     $ 0.24 * (income - 86375)
+    | income > 40525  = (+ 4664)      $ 0.22 * (income - 40525)
+    | income > 9950   = (+ 995)       $ 0.12 * (income - 9950)
+    | otherwise       =                 0.10 * income
+    -- source: 
+    -- https://www.irs.gov/pub/irs-drop/rp-20-45.pdf 
+    -- (Table 3, p. 6-7)
+```
