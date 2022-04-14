@@ -91,7 +91,6 @@ mkYesod "TaxApp" [parseRoutes|
 /tax/result TaxResultR POST
 /tax/id SavedResultR POST
 |]
--- /tax/id/#TaxResultId SavedResultR GET
 
 instance Yesod TaxApp
 

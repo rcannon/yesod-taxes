@@ -48,6 +48,7 @@ To keep things simple, we are going to base the whole tax calculation on "income
 
 ```Haskell
 -- lines 33-36 of Main.hs
+
 -- info from user
 data TaxInfo = TaxInfo 
   { incomeInfo :: Double }
@@ -58,6 +59,7 @@ We are going to return a couple results to the user (and store them in a databas
 
 ```Haskell
 -- lines 43 - 51 of Main.hs
+
 -- result to user, which will be 
 -- stored in database for later access
 share [mkPersist sqlSettings, mkMigrate "migrateAll"] [persistLowerCase|
@@ -97,3 +99,5 @@ calculateTaxResult taxInfo =
     -- https://www.irs.gov/pub/irs-drop/rp-20-45.pdf 
     -- (Table 3, p. 6-7)
 ```
+
+
