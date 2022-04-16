@@ -42,7 +42,7 @@ We will be managing the development environment with Nix through Flakes and with
 
 To keep things simple, the whole application is kept in a single file: `app/Main.hs`.
 
-### Application Structure (Route Layout, Required Yesod Types)
+### Application Structure (Required Yesod Types, Route Layout)
 
 We'll start with the basic required Yesod types and instances foru our application. I won't talk too much about what things mean in order to avoid getting overly technical. I recommend reading the [basics](https://www.yesodweb.com/book/basics) page concurrently with this section. It will cover things more precisely and with greater detail.
 
@@ -96,7 +96,7 @@ getHomeR = defaultLayout
 
 In general, when we are writing the functionality for our routes, we need to take care to name them in a specific manner. The function for handling a specific route and request should be named starting with the request type in all lower-case, followed contiguously by the resource name. The compiler will complain if you don't do this. As another example, if we specified a route as `/my/route MyRouteR POST`, then the route handler function would need to be named `postMyRouteR`. Read more about the handler functions [here](https://www.yesodweb.com/book/basics#basics_handler_function).
 
-Now on to the functionality of the handler. We will avoid customizing the formatting of the page, so we will just use the `defaultLayout` function to handle that. We use the integrated `whamlet` quasi-quoter to generate the HTML of our webpage from the Hamlet template language. In our case, we are just specifying a hyperlink reference to the `TaxInfoR` handler that will be the start page of the actual application. The link will appear under the text "Tax Calculator!" in the same manner that link appear on this page. You can learn more about using the Hamlet for generating HTML, as will as the other template languages for CSS and JavaScript from the [Shakesperian Templates](https://www.yesodweb.com/book/shakespearean-templates) part of the book.
+Now on to the functionality of the handler. We will avoid customizing the formatting of the page, so we will just use the `defaultLayout` function to handle that. We use the integrated `whamlet` quasi-quoter to generate the HTML of our webpage from the Hamlet template language. In our case, we are just specifying a hyperlink reference to the `TaxInfoR` handler that will be the start page of the actual application. The link will appear under the text "Tax Calculator!" in the same manner that links appear on this page. You can learn more about using the Hamlet for generating HTML, as will as the other template languages for CSS and JavaScript from the [Shakesperian Templates](https://www.yesodweb.com/book/shakespearean-templates) part of the book.
 
 ### Backend Computation
 
