@@ -179,7 +179,7 @@ The just of this code it that it accepts a `Double` from the user using the `are
 
 ### Basic Database Stuff
 
-In order to use a postgres database with Persistent, we need to add another instance.
+In order to use a Postgres database with Persistent, we need to add another instance.
 
 ```Haskell
 -- lines 102-107 of Main.hs
@@ -215,7 +215,7 @@ savedInfoForm
 
 ### The Front Page of the App
 
-Next we will create the webpage that 
+Next we will create the webpage that accepts info from the user. 
 
 ### Calculated Tax Results
 
