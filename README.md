@@ -37,7 +37,7 @@ $ nix run
 
 ## Tutorial
 
-### Goals and Project Structure 
+### 1. Goals and Project Structure 
 
 The goal of this tutorial is to help you get started with developing Haskell web applications with Yesod. While I think the [Yesod Book](https://www.yesodweb.com/book) is well written, it can be quite daunting for people who are new to Haskell or new to Yesod. Here I will give you an introduction to Yesod by building a simple United States federal income tax calclator. I recommend treating this as a suppliment to the Yesod Book and reading this concurrently with it, and I will try to point you to the relevent sections of the book when they come up. This is intended to be introductory and practical, we won't go in depth at all on types, template haskell, etc. I want to make this a useful first jumping-off point for working with Yesod.
 
@@ -45,7 +45,7 @@ We will be managing the development environment with Nix through Flakes and with
 
 To keep things simple, the whole application is kept in a single file: `app/Main.hs`.
 
-### Application Structure (Required Yesod Types, Route Layout)
+### 2. Application Structure (Required Yesod Types, Route Layout)
 
 We'll start with the basic required Yesod types and instances foru our application. I won't talk too much about what things mean in order to avoid getting overly technical. I recommend reading the [basics](https://www.yesodweb.com/book/basics) page concurrently with this section. It will cover things more precisely and with greater detail.
 
@@ -76,7 +76,7 @@ mkYesod "TaxApp" [parseRoutes|
 
 The `mkYesod "TaxApp" [parseRoutes|` is not important for our purposes, but again feel free to change `"TaxApp"` to whatever, so long as it is consistent with that in the previous code snippet. Here you can see that we have four routes. If this app was running at `website.com`, the routes would be (1) `website.com/`, (2) `website.com/tax`, (3) `website.com/tax/result`, and (4) `website.com/tax/id`. Routes in Yesod require three things to be specified: the route as it would appear as a relative path in the URL, a resource name for this route (we will use it later for specifying the functionality), and the type of request that should we answered at this route. The basics of routing are covered [here](https://www.yesodweb.com/book/basics#basics_routing), and more in depth coverage can be found in the [Routing and Handlers](https://www.yesodweb.com/book/routing-and-handlers) section of the Yesod Book.
 
-### The Home Page
+### 3. The Home Page
 
 In this section we will concern ourselves with just the first route listed above:
 ```
@@ -101,7 +101,7 @@ In general, when we are writing the functionality for our routes, we need to tak
 
 Now on to the functionality of the handler. We will avoid customizing the formatting of the page, so we will just use the `defaultLayout` function to handle that. We use the integrated `whamlet` quasi-quoter to generate the HTML of our webpage from the Hamlet template language. In our case, we are just specifying a hyperlink reference to the `TaxInfoR` handler that will be the start page of the actual application. The link will appear under the text "Tax Calculator!" in the same manner that links appear on this page. You can learn more about using the Hamlet for generating HTML, as will as the other template languages for CSS and JavaScript from the [Shakesperian Templates](https://www.yesodweb.com/book/shakespearean-templates) part of the book.
 
-### Backend Computation
+### 4. Backend Computation
 
 To keep things simple, we are going to base the whole tax calculation on "income." Here is the Haskell code we will use for representing income:
 
@@ -159,7 +159,7 @@ calculateTaxResult taxInfo =
     -- (Table 3, p. 6-7)
 ```
 
-### Creating a Tax Info Form
+### 5. Creating a Tax Info Form
 
 Next we will create a simple form for accepting the income info from the user and returning the result. This won't involve designing the webpage at all. I'll present the code, then talk about what it does:
 
@@ -180,7 +180,7 @@ taxInfoForm
 
 The just of this code it that it accepts a `Double` from the user using the `areq` function for creating applicative forms (learn more from the Yesod Book's [AForms](https://www.yesodweb.com/book/forms#forms_create_literal_aform_literal_s) section) and since applicative are functors, we `fmap` the composed function `calculateTaxResult . TaxInfo` to create an instance of the `TaxInfo` data and pass it to `calculateTaxResult` to compute the result. The result of this is passed to `renderTable` which takes care of allowing us to use the form monadically and present it on a webpage (we'll get to this later). We define `incomeField` to help us restrict the values the form accepts (see [Form Validation](https://www.yesodweb.com/book/forms#forms_validation)); in our case, we require income to be greater than zero.
 
-### Basic Database Stuff
+### 6. Basic Database Stuff
 
 In order to use a Postgres database with Persistent, we need to add another instance.
 
@@ -223,7 +223,7 @@ savedInfoForm
 In the next sections we will talk more about building the interface between user and these backends.
 
 
-### The Front Page of the App
+### 7. The Front Page of the App
 
 Next we will create the webpage that accepts info from the user. 
 This corresponds to the `/tax TaxInfoR GET` route and resource we specified above. 
@@ -278,12 +278,109 @@ The next line shows the first form, the one that first calculates the tax result
 
 ```
 
-### Calculated Tax Results
+The first line defines some heuristics about the widget.
+We implement it as a post method, and define the for action to take us to
+the `TaxResultR` Route; therefore, the haskell function that implmements 
+this method must be called `postTaxResultR`. 
+We won't discuss `enctype`, but note (TODO remove app function).
 
-If the user entered information about their income on the last page, they will be brought to this one. 
+### 8. Calculated Tax Results
 
-### The Saved Tax Results
+If the user entered information about their income on the last page, they will be brought to this one. Here we show the user their calculated tax payed, after-tax income, and effective tax rate. We also give them an ID number that they can use to retrieve the result later.
+Here is the code for the page (note that the function must be called `postTaxResultR`, as mentioned in the last section):
 
-### Running the Application
+```Haskell
+postTaxResultR :: Handler Html
+postTaxResultR = do
+  ((result, widget), enctype) <- runFormPost taxInfoForm
+  case result of
+      FormSuccess (tr@(TaxResult tp ati etr)) -> do
+        taxResId <- runDB $ insert tr
+        defaultLayout [whamlet|
+                        <p>Your Tax Information: 
+                        <p>Tax Payed: $#{show tp}
+                        <p>After Tax Income: $#{show ati}
+                        <p>Effective Tax Rate: #{show etr}
+                        <p>
+                        <p>Your ID number for later access: #{show $ fromSqlKey taxResId}
+                        <a href=@{TaxInfoR}>Again!
+                        <p> 
+                        <a href=@{HomeR}>Go Home 
+                      |]
+      _ -> defaultLayout
+          [whamlet|
+              <p>Invalid input, let's try again.
+              <form method=post action=@{TaxResultR} enctype=#{enctype}>
+                  ^{widget}
+                  <button>Submit
+              <a href=@{HomeR}>Go Home
+          |]
+```
 
+The first line of the function retrieves the result of the tax calculation 
+by running the `taxInfoForm` function we defined earlier. After that we just pattern match on the resulting value. If the form is successful, we get the value `FormSuccess (tr :: TaxResult)` (in the code we deconstruct `tr` so we can access the values individually). The next line inserts the `TaxResult` value into our database and gives us an SQL key that we will give to the user so they can retrieve the info later. We then call defaultLayout and construct some HTML to display the values on the webpage.
 
+On the other hand, if we get any value other than `FormSuccess`, we give the user the option of re-entering their income or returning to the home page.
+
+### 9. The Saved Tax Results
+
+If in section 7 the user already had their tax results saved in the database and entered their ID number to retrieve it, the user would be brought to the `SavedResultR`, described by the funtion below: 
+
+```Haskell
+postSavedResultR :: Handler Html
+postSavedResultR = do
+  ((result, widget), enctype) <- runFormPost savedInfoForm
+  case result of
+      FormSuccess taxResId -> do
+        let key = (toSqlKey $ getKey taxResId) :: Key TaxResult
+        (TaxResult tp ati etr) <- runDB $ get404 key 
+        defaultLayout [whamlet|
+                        <p>Your Tax Information: 
+                        <p>Tax Payed: $#{show tp}
+                        <p>After Tax Income: $#{show ati}
+                        <p>Effective Tax Rate: #{show etr}
+                        <p> 
+                        <a href=@{HomeR}>Go Home 
+                      |]
+      _ -> defaultLayout
+          [whamlet|
+              <p>Invalid ID Number.
+              <a href=@{HomeR}>Try Again!
+          |]
+```
+
+This method is very similar to the one in the previous section:
+we run the `savedInfoForm` that we defined at the end of section 6
+and pattern match on the result. If the result is a `FormSUccess`, 
+we convert the number that the user entered into and SQL key, 
+retrive the tax info in the Postgres database that cooresponds to that
+key, and return that tax info to the user. The `get404` method automatically 
+handles the case where the number entered by the user is not a valid key in the
+database. If the form fails, we tell the user that the value they entered was not
+valid, and direct them to the home page.
+
+### 10. Main
+
+Here is the code the code that runs the application:
+
+```Haskell
+dbConnectionStr = "host=localhost dbname=taxapp user=test password=test port=5432"
+openConnectionCount = 10
+
+main :: IO () 
+main = runStderrLoggingT 
+     $ withPostgresqlPool dbConnectionStr openConnectionCount 
+     $ \pool -> liftIO $ do
+          runResourceT $ flip runSqlPool pool $ do
+            runMigration migrateAll
+            insert $ calculateTaxResult $ TaxInfo 1.0
+          warp 3000 $ TaxApp pool
+```
+
+The first line describes how the application can access the database; make sure to run Postrgres and initialize the database by calling `$ ./db_start.sh`.
+
+### 11. Extensions
+
+Here are some ideas for ways you could extend the application in order to get used to working with yesod:
+
+- instead of having the user retrieve their tax info by entering their SQL key, allow them to log in to see their info (this page might help: [Authentication and Authorization](https://www.yesodweb.com/book/authentication-and-authorization)).

@@ -146,30 +146,25 @@ getTaxInfoR :: Handler Html
 getTaxInfoR = do
   (calcWidget, calcEnctype) <- generateFormPost taxInfoForm 
   (saveWidget, saveEnctype) <- generateFormPost savedInfoForm
+  let title = "US Federal Income Tax Calculator"
   defaultLayout $ do
       setTitle title
-      app calcWidget calcEnctype saveWidget saveEnctype
-      
-  where 
-  title = "US Federal Income Tax Calculator"
+      toWidget [lucius| appStyle { text-align: center } |]
 
-  app widget1 enctype1 widget2 enctype2 = do
-    toWidget [lucius| appStyle { text-align: center } |]
-
-    [whamlet|
+      [whamlet|
         <appStyle>
           <p>#{title}
-          <form method=post action=@{TaxResultR} enctype=#{enctype1}>
-              ^{widget1}
+          <form method=post action=@{TaxResultR} enctype=#{calcEnctype}>
+              ^{calcWidget}
               <p>Click the button below to learn about your taxes!
               <button>Submit
           <p>Or, get your saved tax data: 
-          <form method=post action=@{SavedResultR} enctype=#{enctype2}>
-              ^{widget2}
+          <form method=post action=@{SavedResultR} enctype=#{saveEnctype}>
+              ^{saveWidget}
               <button>Submit
           <a href=@{HomeR}>Go Home
-    |]
-
+      |]
+    
 
 -- returns TaxResult to user
 -- based on TaxInfo input, and
