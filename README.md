@@ -239,29 +239,24 @@ getTaxInfoR :: Handler Html
 getTaxInfoR = do
   (calcWidget, calcEnctype) <- generateFormPost taxInfoForm 
   (saveWidget, saveEnctype) <- generateFormPost savedInfoForm
+  let title = "US Federal Income Tax Calculator"
   defaultLayout $ do
       setTitle title
-      app calcWidget calcEnctype saveWidget saveEnctype
-      
-  where 
-  title = "US Federal Income Tax Calculator"
+      toWidget [lucius| appStyle { text-align: center } |]
 
-  app widget1 enctype1 widget2 enctype2 = do
-    toWidget [lucius| appStyle { text-align: center } |]
-
-    [whamlet|
+      [whamlet|
         <appStyle>
           <p>#{title}
-          <form method=post action=@{TaxResultR} enctype=#{enctype1}>
-              ^{widget1}
+          <form method=post action=@{TaxResultR} enctype=#{calcEnctype}>
+              ^{calcWidget}
               <p>Click the button below to learn about your taxes!
               <button>Submit
           <p>Or, get your saved tax data: 
-          <form method=post action=@{SavedResultR} enctype=#{enctype2}>
-              ^{widget2}
+          <form method=post action=@{SavedResultR} enctype=#{saveEnctype}>
+              ^{saveWidget}
               <button>Submit
           <a href=@{HomeR}>Go Home
-    |]
+      |]
 ```
 
 You can see that the `Handler` type is monadic, which allows for easy composition of methods. In the first two lines of `getTaxInfoR`, we generate the forms from the revious section. Each of these returns a pair of two values, the first being the widget that we will use in displaying the form and the second being an Enctype (TODO: check) which we don't need to talk about for our purposes. After gettign these values, we call the `defaultLayout` function to display the page. The `defaultLayout` function takes a widget as input, and we'll demonstrate composibility of Widgets by building a function by that takes the outputs of the `generateFormPost` functions and builds a widget. 
@@ -290,6 +285,8 @@ If the user entered information about their income on the last page, they will b
 Here is the code for the page (note that the function must be called `postTaxResultR`, as mentioned in the last section):
 
 ```Haskell
+-- lines 172 - 196 of Main.hs
+
 postTaxResultR :: Handler Html
 postTaxResultR = do
   ((result, widget), enctype) <- runFormPost taxInfoForm
@@ -327,6 +324,8 @@ On the other hand, if we get any value other than `FormSuccess`, we give the use
 If in section 7 the user already had their tax results saved in the database and entered their ID number to retrieve it, the user would be brought to the `SavedResultR`, described by the funtion below: 
 
 ```Haskell
+-- lines 200 - 219 of Main.hs
+
 postSavedResultR :: Handler Html
 postSavedResultR = do
   ((result, widget), enctype) <- runFormPost savedInfoForm
@@ -364,6 +363,8 @@ valid, and direct them to the home page.
 Here is the code the code that runs the application:
 
 ```Haskell
+-- lines 226 - 236 of Main.hs
+
 dbConnectionStr = "host=localhost dbname=taxapp user=test password=test port=5432"
 openConnectionCount = 10
 
@@ -379,8 +380,12 @@ main = runStderrLoggingT
 
 The first line describes how the application can access the database; make sure to run Postrgres and initialize the database by calling `$ ./db_start.sh`.
 
-### 11. Extensions
+### 11. Ideas for Extensions
 
-Here are some ideas for ways you could extend the application in order to get used to working with yesod:
+Here are some ideas for ways one could extend the application to get used to working with Yesod:
 
-- instead of having the user retrieve their tax info by entering their SQL key, allow them to log in to see their info (this page might help: [Authentication and Authorization](https://www.yesodweb.com/book/authentication-and-authorization)).
+- Extend the tax calculator form to adhere to some basic tax rules in a US state (or just make up some rules).
+
+- Allow the user to delete their info from the database.
+
+- Instead of having the user retrieve their tax info by entering their SQL key, allow them to log in to see their info (this page might help: [Authentication and Authorization](https://www.yesodweb.com/book/authentication-and-authorization)).
